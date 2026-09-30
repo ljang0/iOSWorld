@@ -105,6 +105,10 @@ struct MoviesState: FluxState, Codable {
 
     // Pre-seeded so the Discover screen shows content immediately without a network call.
     var discover: [Int] = discoverSeedMovies.map { $0.id }
+    // Optional fields preserve decoding of previously saved app state.
+    var discoverGeneration: UUID?
+    var consumedDiscoverIDs: Set<Int>?
+    var discoverNotice: String?
     var discoverFilter: DiscoverFilter?
     var savedDiscoverFilters: [DiscoverFilter] = []
 

@@ -304,9 +304,10 @@ struct PostCardView: View {
                 .padding(.trailing, 4)
 
                 actionButton(
-                    icon: livePost.userHasLiked ? "hand.thumbsup.fill" : "hand.thumbsup",
-                    label: "Like",
-                    isActive: livePost.userHasLiked
+                    icon: livePost.selectedReaction?.sfSymbol ?? "hand.thumbsup",
+                    label: livePost.selectedReaction?.label ?? "Like",
+                    isActive: livePost.userHasLiked,
+                    activeColor: livePost.selectedReaction.map { Color(hexString: $0.iconColor) }
                 ) {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     appState.toggleLike(postId: post.id)
@@ -603,7 +604,7 @@ struct PostCardView: View {
     }
 
     @ViewBuilder
-    private func actionButton(icon: String, label: String, isActive: Bool = false, action: @escaping () -> Void) -> some View {
+    private func actionButton(icon: String, label: String, isActive: Bool = false, activeColor: Color? = nil, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 1) {
                 Image(systemName: icon)
@@ -611,7 +612,7 @@ struct PostCardView: View {
                 Text(label)
                     .font(.system(size: 11))
             }
-            .foregroundColor(isActive ? LockedInTheme.likedBlue : LockedInTheme.actionText)
+            .foregroundColor(isActive ? (activeColor ?? LockedInTheme.likedBlue) : LockedInTheme.actionText)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
         }

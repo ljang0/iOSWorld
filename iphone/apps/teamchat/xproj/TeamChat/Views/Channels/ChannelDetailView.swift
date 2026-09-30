@@ -212,9 +212,22 @@ struct ChannelDetailView: View {
             formattingToolbar
 
             HStack(spacing: 8) {
-                TextField("Message #\(viewModel.channel?.channelName ?? "channel")", text: $draftText, axis: .vertical)
-                    .lineLimit(1...4)
+                // A bounded editor avoids repeated intrinsic-height negotiation
+                // between a growing multiline TextField and this horizontal row.
+                TextEditor(text: $draftText)
+                    .frame(height: 88)
+                    .scrollContentBackground(.hidden)
                     .foregroundStyle(.white)
+                    .overlay(alignment: .topLeading) {
+                        if draftText.isEmpty {
+                            Text("Message #\(viewModel.channel?.channelName ?? "channel")")
+                                .foregroundStyle(TeamChatPalette.subtleText)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 8)
+                                .allowsHitTesting(false)
+                                .accessibilityHidden(true)
+                        }
+                    }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
                     .background(RoundedRectangle(cornerRadius: 10).fill(TeamChatPalette.row))
@@ -227,6 +240,7 @@ struct ChannelDetailView: View {
                         }
                     }
                     .accessibilityIdentifier("composer_text_field")
+                    .accessibilityLabel("Message #\(viewModel.channel?.channelName ?? "channel")")
 
                 Menu {
                     Button("Attach image") {

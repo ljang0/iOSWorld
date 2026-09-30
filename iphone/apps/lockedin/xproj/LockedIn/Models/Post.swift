@@ -35,6 +35,11 @@ struct Post: Identifiable, Codable, Hashable {
     var connectionContext: String?
     var connectionDegree: String?
     var userHasLiked: Bool
+    var userReaction: PostReactionType? = nil
+    // Legacy liked posts have no selected type and retain their existing Like appearance.
+    var selectedReaction: PostReactionType? {
+        userHasLiked ? (userReaction ?? .like) : nil
+    }
     var hasVideo: Bool = false
     var videoDuration: String?
     var poll: PostPoll?

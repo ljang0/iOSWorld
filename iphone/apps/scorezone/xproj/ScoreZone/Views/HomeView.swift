@@ -11,7 +11,9 @@ struct HomeView: View {
             Color.black.ignoresSafeArea()
 
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 18) {
+                // This bounded feed must be measured as one layout. Lazy section
+                // discovery can cycle with nested horizontal scroll views on iOS 26.
+                VStack(alignment: .leading, spacing: 18) {
                     Text("Home")
                         .font(.caption)
                         .foregroundStyle(.clear)

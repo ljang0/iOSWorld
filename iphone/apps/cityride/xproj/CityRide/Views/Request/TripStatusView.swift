@@ -6,7 +6,7 @@ struct TripStatusView: View {
     @State private var showReceipt = false
     @State private var showCallOverlay = false
     @State private var showChat = false
-    @State private var etaCountdown: Int = 0
+    @State private var etaCountdown: Int?
     @State private var etaTimer: Timer?
 
     var body: some View {
@@ -59,7 +59,9 @@ struct TripStatusView: View {
                 DriverChatSheet(driverName: driver.driverName)
             }
         }
-        .onAppear {
+        // Presentation and trip creation can arrive in separate SwiftUI updates.
+        // Initialize when the actual trip becomes available, including on entry.
+        .onChange(of: trip?.id, initial: true) { _, _ in
             if let trip = trip {
                 etaCountdown = trip.etaMinutes
                 startETATimer()
@@ -74,8 +76,8 @@ struct TripStatusView: View {
     private func startETATimer() {
         etaTimer?.invalidate()
         etaTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { _ in
-            if etaCountdown > 1 {
-                etaCountdown -= 1
+            if let remaining = etaCountdown, remaining > 1 {
+                etaCountdown = remaining - 1
             } else {
                 etaTimer?.invalidate()
                 etaTimer = nil
@@ -90,9 +92,9 @@ struct TripStatusView: View {
         case .canceled:
             return "Canceled"
         case .tripInProgress:
-            return "\(max(1, etaCountdown)) min"
+            return "\(max(1, etaCountdown ?? trip.etaMinutes)) min"
         default:
-            return "ETA \(max(1, etaCountdown)) min"
+            return "ETA \(max(1, etaCountdown ?? trip.etaMinutes)) min"
         }
     }
 

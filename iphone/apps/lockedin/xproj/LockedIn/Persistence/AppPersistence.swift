@@ -6,6 +6,7 @@ final class AppPersistence {
     private let decoder = JSONDecoder()
 
     private let savedJobIdsKey = "lockedin_sim_saved_job_ids"
+    private let userReactionsKey = "lockedin_sim_user_reactions"
     private let likedPostIdsKey = "lockedin_sim_liked_post_ids"
     private let dismissedInvitationIdsKey = "lockedin_sim_dismissed_invitation_ids"
 
@@ -35,6 +36,15 @@ final class AppPersistence {
         userDefaults.set(Array(ids.sorted()), forKey: likedPostIdsKey)
     }
 
+    func loadUserReactions() -> [String: PostReactionType] {
+        let saved = userDefaults.dictionary(forKey: userReactionsKey) as? [String: String] ?? [:]
+        return saved.compactMapValues(PostReactionType.init(rawValue:))
+    }
+
+    func persistUserReactions(_ reactions: [String: PostReactionType]) {
+        userDefaults.set(reactions.mapValues { $0.rawValue }, forKey: userReactionsKey)
+    }
+
     // MARK: - Dismissed Invitations
 
     func loadDismissedInvitationIds() -> Set<String>? {
@@ -51,6 +61,7 @@ final class AppPersistence {
     func clearAll() {
         userDefaults.removeObject(forKey: savedJobIdsKey)
         userDefaults.removeObject(forKey: likedPostIdsKey)
+        userDefaults.removeObject(forKey: userReactionsKey)
         userDefaults.removeObject(forKey: dismissedInvitationIdsKey)
     }
 }

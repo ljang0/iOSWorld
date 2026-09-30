@@ -316,6 +316,8 @@ including Dedicated Host cleanup notes.
 
 ## More Docs
 
+- [`docs/app_fixes.md`](docs/app_fixes.md) - app behavior corrections and
+  standalone regression checks.
 - [`mcps/README.md`](mcps/README.md) - how MCP mode works, how tools are
   exposed to Qwen, confirmation-tool options, simulator fallback tools, and MCP
   troubleshooting.

@@ -671,6 +671,10 @@ grant_all_permissions() {
 # Auto-dismiss permission alerts in the Simulator via AppleScript.
 # Clicks "Allow" / "OK" on any system alert that appears.
 dismiss_simulator_alerts() {
+  if [[ "${HEADLESS_DEDICATED_SIMULATOR:-false}" == "true" ]]; then
+    log "Skipping global Simulator-window AppleScript; use UDID-scoped device control."
+    return 0
+  fi
   log "Dismissing any remaining permission alerts..."
   osascript >/dev/null 2>&1 <<'APPLESCRIPT' || true
 tell application "System Events"
@@ -1711,20 +1715,21 @@ for app in m.values():
   write_last_bootstrap_state "$udid"
 
   # Return to home screen with double home-button press (Cmd+Shift+H in Simulator)
-  log "Returning to home screen..."
-  open -a Simulator 2>/dev/null || true
-  sleep 1
-  osascript -e 'tell application "Simulator" to activate' \
-            -e 'delay 0.5' \
-            -e 'tell application "System Events" to keystroke "h" using {command down, shift down}' \
-            2>/dev/null || true
-  sleep 1
-  osascript -e 'tell application "Simulator" to activate' \
-            -e 'delay 0.5' \
-            -e 'tell application "System Events" to keystroke "h" using {command down, shift down}' \
-            2>/dev/null || true
-  sleep 1
-
+  if [[ "${HEADLESS_DEDICATED_SIMULATOR:-false}" != "true" ]]; then
+    log "Returning to home screen..."
+    open -a Simulator 2>/dev/null || true
+    sleep 1
+    osascript -e 'tell application "Simulator" to activate' \
+              -e 'delay 0.5' \
+              -e 'tell application "System Events" to keystroke "h" using {command down, shift down}' \
+              2>/dev/null || true
+    sleep 1
+    osascript -e 'tell application "Simulator" to activate' \
+              -e 'delay 0.5' \
+              -e 'tell application "System Events" to keystroke "h" using {command down, shift down}' \
+              2>/dev/null || true
+    sleep 1
+  fi
   # Dismiss any lingering permission alerts
   dismiss_simulator_alerts
 

@@ -38,6 +38,11 @@ struct Movie: Codable, Identifiable {
     }()
     
     let genres: [Genre]?
+    // List/search responses carry IDs; detail responses carry full genre objects.
+    var genre_ids: [Int]? = nil
+    var knownGenreIDs: Set<Int> {
+        Set((genres ?? []).map { $0.id }).union(genre_ids ?? [])
+    }
     let runtime: Int?
     let status: String?
     let video: Bool

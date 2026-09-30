@@ -94,11 +94,31 @@ func moviesStateReducer(state: MoviesState, action: Action) -> MoviesState {
         }
         state = mergeMovies(movies: action.response.results, state: state)
         
+    case let action as MoviesActions.SetOfflineDiscover:
+        guard action.generation == state.discoverGeneration else { break }
+        // Refill must not resurrect cards consumed while the request was in flight.
+        // The top card is the last ID in the Discover stack.
+        let consumed = state.consumedDiscoverIDs ?? []
+        let candidates = action.movies.reversed().map { $0.id }.filter { !consumed.contains($0) }
+        if state.discoverNotice == nil {
+            state.discover = candidates
+        } else {
+            let existing = Set(state.discover)
+            state.discover.insert(contentsOf: candidates.filter { !existing.contains($0) }, at: 0)
+        }
+        for movie in action.movies { state.movies[movie.id] = movie }
+        state.discoverFilter = action.filter
+        state.discoverNotice = action.notice
+
     case let action as MoviesActions.SetRandomDiscover:
+        guard action.generation == state.discoverGeneration else { break }
+        state.discoverNotice = nil
+        var excluded = (state.consumedDiscoverIDs ?? []).union(state.discover)
+        let candidates = action.response.results.map { $0.id }.filter { excluded.insert($0).inserted }
         if state.discover.isEmpty {
-            state.discover = action.response.results.map{ $0.id }
+            state.discover = candidates
         } else if state.discover.count < 10 {
-            state.discover.insert(contentsOf: action.response.results.map{ $0.id }, at: 0)
+            state.discover.insert(contentsOf: candidates, at: 0)
         }
         state = mergeMovies(movies: action.response.results, state: state)
         state.discoverFilter = action.filter
@@ -137,12 +157,21 @@ func moviesStateReducer(state: MoviesState, action: Action) -> MoviesState {
         state.customLists[action.list] = nil
         
     case _ as  MoviesActions.PopRandromDiscover:
-        _ = state.discover.popLast()
+        if let movie = state.discover.popLast() {
+            var consumed = state.consumedDiscoverIDs ?? []
+            consumed.insert(movie)
+            state.consumedDiscoverIDs = consumed
+        }
     case let action as  MoviesActions.PushRandomDiscover:
+        state.consumedDiscoverIDs?.remove(action.movie)
+        state.discover.removeAll { $0 == action.movie }
         state.discover.append(action.movie)
         
     case _ as  MoviesActions.ResetRandomDiscover:
+        state.discoverGeneration = UUID()
+        state.consumedDiscoverIDs = []
         state.discoverFilter = nil
+        state.discoverNotice = nil
         state.discover = []
         
     case let action as MoviesActions.SetGenres:

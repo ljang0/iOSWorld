@@ -417,6 +417,12 @@ private struct DailyHistoryDetailView: View {
                             .font(.headline)
                         Text("\(log.consumedCalories) consumed, \(log.burnedCalories) burned")
                             .foregroundStyle(.secondary)
+                        Text("Protein: \(AppFormatters.displayNumber(log.nutritionTotals.protein)) g")
+                            .accessibilityIdentifier("daily_history_protein_total")
+                        Text("Carbs: \(AppFormatters.displayNumber(log.nutritionTotals.carbs)) g")
+                            .accessibilityIdentifier("daily_history_carbs_total")
+                        Text("Fat: \(AppFormatters.displayNumber(log.nutritionTotals.fat)) g")
+                            .accessibilityIdentifier("daily_history_fat_total")
                     }
                 }
 

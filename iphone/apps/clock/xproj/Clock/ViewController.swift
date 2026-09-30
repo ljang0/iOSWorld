@@ -343,7 +343,7 @@ final class AddWorldClockViewController: UIViewController, UITableViewDataSource
     }
 }
 
-struct AlarmItem {
+struct AlarmItem: Codable {
     var time: Date
     var label: String
     var enabled: Bool
@@ -361,9 +361,40 @@ struct AlarmItem {
     }
 }
 
+// Use a container file so deleting app data also clears alarms without a preferences cache.
+enum AlarmStorage {
+    static var fileURL: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Clock", isDirectory: true)
+            .appendingPathComponent("alarms-v1.json")
+    }
+
+    static func load(from url: URL = fileURL) -> [AlarmItem]? {
+        guard let data = try? Data(contentsOf: url),
+              let alarms = try? JSONDecoder().decode([AlarmItem].self, from: data),
+              alarms.allSatisfy({ $0.time.timeIntervalSinceReferenceDate.isFinite &&
+                  $0.repeatDays.allSatisfy { (1...7).contains($0) } }) else { return nil }
+        return alarms
+    }
+
+    static func save(_ alarms: [AlarmItem], to url: URL = fileURL) {
+        do {
+            let data = try JSONEncoder().encode(alarms)
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
+                                                    withIntermediateDirectories: true)
+            try data.write(to: url, options: .atomic)
+        } catch {
+            NSLog("Clock could not save alarms: %@", error.localizedDescription)
+        }
+    }
+}
+
 final class AlarmListViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     private let tableView = UITableView(frame: .zero, style: .plain)
-    private var alarms: [AlarmItem] = AlarmListViewController.defaultAlarms()
+    private var alarms: [AlarmItem] = AlarmStorage.load() ?? AlarmListViewController.defaultAlarms() {
+        // Array mutations also trigger didSet: create, edit, toggle, and delete.
+        didSet { AlarmStorage.save(alarms) }
+    }
 
     private let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()

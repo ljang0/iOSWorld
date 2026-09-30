@@ -54,6 +54,15 @@ struct SpreadsheetEditorView: View {
 
             if let spreadsheet, let file, let selectedSheet {
                 VStack(spacing: 0) {
+                    Text(file.name)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 8)
+                        .accessibilityIdentifier("spreadsheet_workbook_title")
                     topToolbar(file: file)
                     Divider().background(SheetsTheme.divider)
                     gridView(sheet: selectedSheet)

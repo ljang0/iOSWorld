@@ -19,6 +19,7 @@ struct DiscoverView: ConnectedView {
         let posters: [Int: String]
         let currentMovie: Movie?
         let filter: DiscoverFilter?
+        let notice: String?
         let genres: [Genre]
         let dispatch: DispatchFunction
     }
@@ -48,6 +49,7 @@ struct DiscoverView: ConnectedView {
                      posters: posters,
                      currentMovie: movies.isEmpty ? nil : state.moviesState.movies[movies.reversed()[0]],
                      filter: state.moviesState.discoverFilter,
+                     notice: state.moviesState.discoverNotice,
                      genres: state.moviesState.genres,
                      dispatch: dispatch)
     }
@@ -96,7 +98,7 @@ struct DiscoverView: ConnectedView {
     
     // MARK: Body views
     private func filterView(props: Props) -> some View {
-        return BorderedButton(text: props.filter?.toText(genres: props.genres) ?? "Loading...",
+        return BorderedButton(text: props.filter?.toText(genres: props.genres) ?? "Discover filters",
                               systemImageName: "line.horizontal.3.decrease",
                               color: .steam_blue,
                               isOn: false) {
@@ -173,7 +175,7 @@ struct DiscoverView: ConnectedView {
     }
     
     private func draggableMovies(props: Props) -> some View {
-        ForEach(props.movies, id: \.self) { id in
+        ForEach(visibleDiscoverMovieIDs(props.movies), id: \.self) { id in
             Group {
                 if props.movies.reversed().firstIndex(of: id) == 0 {
                     DraggableCover(movieId: id,
@@ -198,8 +200,8 @@ struct DiscoverView: ConnectedView {
                 } else {
                     DiscoverCoverImage(imageLoader: ImageLoaderCache.shared.loaderFor(path: props.posters[id],
                                                                                       size: .medium))
-                        .scaleEffect(1.0 - CGFloat(props.movies.reversed().firstIndex(of: id)!) * 0.03 + CGFloat(self.scaleResistance()))
-                        .padding(.bottom, CGFloat(props.movies.reversed().firstIndex(of: id)! * 16) - self.dragResistance())
+                        .scaleEffect(1.0 - CGFloat(visibleDiscoverMovieIDs(props.movies).reversed().firstIndex(of: id)!) * 0.03 + CGFloat(self.scaleResistance()))
+                        .padding(.bottom, CGFloat(visibleDiscoverMovieIDs(props.movies).reversed().firstIndex(of: id)! * 16) - self.dragResistance())
                         .animation(self.draggedViewState.isActive ?
                             .easeIn(duration: 0) :
                             .spring(response: 0.5, dampingFraction: 0.5, blendDuration: 0))
@@ -211,6 +213,14 @@ struct DiscoverView: ConnectedView {
     func body(props: Props) -> some View {
         ZStack(alignment: .center) {
             draggableMovies(props: props)
+            if let notice = props.notice {
+                VStack {
+                    Text(notice).font(.caption).multilineTextAlignment(.center).padding()
+                    if !props.movies.isEmpty { Spacer() }
+                }.padding(.top, 70)
+            } else if props.movies.isEmpty {
+                ProgressView("Loading movies…")
+            }
             GeometryReader { reader in
                 self.filterView(props: props)
                     .position(x: reader.frame(in: .local).midX,

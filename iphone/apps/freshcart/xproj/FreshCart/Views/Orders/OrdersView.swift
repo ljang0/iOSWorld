@@ -106,7 +106,7 @@ private struct OrderRowCard: View {
                     Text(storeName)
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(.primary)
-                    Text(order.deliverySlot.displayLabel)
+                    Text(order.scheduleDisplayLabel)
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                 }
@@ -229,7 +229,7 @@ private struct OrderDetailView: View {
                     .font(.system(size: 14, weight: .semibold))
                 Text("·")
                     .foregroundStyle(.secondary)
-                Text(order.deliverySlot.displayLabel)
+                Text(order.scheduleDisplayLabel)
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
             }

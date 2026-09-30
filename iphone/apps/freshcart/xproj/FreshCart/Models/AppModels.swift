@@ -368,6 +368,18 @@ struct Order: Identifiable, Codable, Hashable {
     var updatedAt: Date
     var shopperRating: ShopperRating?
 
+    // Checkout slots are relative to today; historical orders must use their own timeline.
+    var scheduleDisplayLabel: String {
+        guard orderStatus.isPast else { return deliverySlot.displayLabel }
+        let finalDate = statusEvents
+            .filter { $0.status == orderStatus }
+            .map(\.timestamp)
+            .max()
+        let date = finalDate ?? createdAt
+        let prefix = finalDate == nil ? "Placed" : orderStatus.label
+        return "\(prefix) • \(AppFormatters.historicalOrderDate.string(from: date))"
+    }
+
     var isActive: Bool {
         !orderStatus.isPast && !orderStatus.isScheduled
     }

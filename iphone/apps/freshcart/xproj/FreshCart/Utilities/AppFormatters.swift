@@ -14,6 +14,12 @@ enum AppFormatters {
         return formatter
     }()
 
+    static let historicalOrderDate: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy • h:mm a"
+        return formatter
+    }()
+
     static let shortDate: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d"

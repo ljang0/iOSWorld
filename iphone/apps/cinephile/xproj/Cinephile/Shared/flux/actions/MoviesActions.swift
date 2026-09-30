@@ -225,6 +225,11 @@ struct MoviesActions {
         var filter: DiscoverFilter?
         
         func execute(state: FluxState?, dispatch: @escaping DispatchFunction) {
+            let generation = (state as? AppState)?.moviesState.discoverGeneration
+            let requestedFilter = self.filter
+            var cached = (state as? AppState)?.moviesState.movies ?? [:]
+            for movie in discoverSeedMovies where cached[movie.id] == nil { cached[movie.id] = movie }
+            let offlineMovies = offlineDiscoverMovies(Array(cached.values), filter: requestedFilter)
             var filter = self.filter
             if filter == nil {
                 filter = DiscoverFilter.randomFilter()
@@ -233,9 +238,14 @@ struct MoviesActions {
             { (result: Result<PaginatedResponse<Movie>, APIService.APIError>) in
                 switch result {
                 case let .success(response):
-                    dispatch(SetRandomDiscover(filter: filter!, response: response))
+                    dispatch(SetRandomDiscover(filter: filter!, response: response, generation: generation))
                 case .failure(_):
-                    break
+                    let notice = requestedFilter?.region != nil
+                        ? "Country availability requires a connection. Change the country filter to browse downloaded movies."
+                        : offlineMovies.isEmpty
+                            ? "No downloaded movies match these filters. Change filters or try again when connected."
+                            : "Showing downloaded movies."
+                    dispatch(SetOfflineDiscover(filter: requestedFilter, movies: offlineMovies, notice: notice, generation: generation))
                 }
             }
         }
@@ -341,9 +351,17 @@ struct MoviesActions {
         
     }
     
+    struct SetOfflineDiscover: Action {
+        let filter: DiscoverFilter?
+        let movies: [Movie]
+        let notice: String
+        var generation: UUID? = nil
+    }
+
     struct SetRandomDiscover: Action {
         let filter: DiscoverFilter
         let response: PaginatedResponse<Movie>
+        var generation: UUID? = nil
     }
     
     struct PushRandomDiscover: Action {

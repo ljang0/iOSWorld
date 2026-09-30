@@ -108,6 +108,15 @@ LOAD_ENV_FILE=true \\
 ./bootstrap_ios_apps.sh
 ```
 
+## Dedicated Simulator Automation
+
+For automation that already controls its target simulator, set
+`HEADLESS_DEDICATED_SIMULATOR=true` to skip the global Simulator-window
+AppleScript used for dismissing alerts and returning Home. The controller must
+handle those operations on its selected device. The default is `false`, retaining
+the interactive behavior. This flag does not change simulator selection, app
+installation, or reset behavior; use the existing options for those settings.
+
 ## Repo List Format
 Each line in a repo list can be a local path or a repo URL. The public release
 uses local paths under `iphone/apps/`. You can also provide a name and key/value

@@ -198,9 +198,10 @@ struct PostDetailView: View {
                         // Action buttons
                         HStack(spacing: 0) {
                             detailActionButton(
-                                icon: livePost.userHasLiked ? "hand.thumbsup.fill" : "hand.thumbsup",
-                                label: "Like",
-                                isActive: livePost.userHasLiked
+                                icon: livePost.selectedReaction?.sfSymbol ?? "hand.thumbsup",
+                                label: livePost.selectedReaction?.label ?? "Like",
+                                isActive: livePost.userHasLiked,
+                                activeColor: livePost.selectedReaction.map { Color(hexString: $0.iconColor) }
                             ) {
                                 appState.toggleLike(postId: post.id)
                             }
@@ -482,7 +483,7 @@ struct PostDetailView: View {
     // MARK: - Action Button
 
     @ViewBuilder
-    private func detailActionButton(icon: String, label: String, isActive: Bool = false, action: @escaping () -> Void) -> some View {
+    private func detailActionButton(icon: String, label: String, isActive: Bool = false, activeColor: Color? = nil, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 1) {
                 Image(systemName: icon)
@@ -490,7 +491,7 @@ struct PostDetailView: View {
                 Text(label)
                     .font(.system(size: 11))
             }
-            .foregroundColor(isActive ? LockedInTheme.likedBlue : LockedInTheme.actionText)
+            .foregroundColor(isActive ? (activeColor ?? LockedInTheme.likedBlue) : LockedInTheme.actionText)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
         }

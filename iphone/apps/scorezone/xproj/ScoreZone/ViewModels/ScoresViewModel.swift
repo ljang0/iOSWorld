@@ -12,8 +12,6 @@ final class ScoresViewModel: ObservableObject {
     @Published var loadState: LoadState
     @Published var warningMessage: String?
     private var lastSyncedBenchmarkDayOffset: Int?
-    /// When true, the user is manually navigating dates — suppress off-season redirects.
-    private var userIsNavigating = false
 
     init() {
         self.selectedLeagueID = "nba"
@@ -28,26 +26,22 @@ final class ScoresViewModel: ObservableObject {
     func syncFromAppState(_ appState: AppState) {
         if SeedData.league(by: appState.preferredLeagueID) != nil {
             selectedLeagueID = appState.preferredLeagueID
-            userIsNavigating = false
         }
         if lastSyncedBenchmarkDayOffset != appState.benchmarkDayOffset {
             selectedDate = appState.benchmarkDate
             lastSyncedBenchmarkDayOffset = appState.benchmarkDayOffset
-            userIsNavigating = false
         }
     }
 
-    /// Call when the user taps a league chip — resets navigation state so off-season redirect works.
+    /// Change the league while preserving the selected date.
     func selectLeague(_ leagueID: String) {
         selectedLeagueID = leagueID
-        userIsNavigating = false
     }
 
     /// Call when the user taps the date back/forward arrows.
     func navigateDate(by days: Int) {
         if let newDate = Calendar.current.date(byAdding: .day, value: days, to: selectedDate) {
             selectedDate = newDate
-            userIsNavigating = true
         }
     }
 
@@ -58,19 +52,23 @@ final class ScoresViewModel: ObservableObject {
             return
         }
 
+        let requestedDate = selectedDate
+        let requestedLeagueID = selectedLeagueID
         let result = await appState.repository.loadScoreboard(
             league: league,
-            date: selectedDate,
+            date: requestedDate,
             mode: appState.dataAccessMode
         )
-        games = result.value
+        // A slower previous request must not replace the user's current selection.
+        guard selectedLeagueID == requestedLeagueID,
+              Calendar.current.isDate(selectedDate, inSameDayAs: requestedDate) else { return }
+        // The repository can return recent off-season results. A date-specific
+        // scoreboard must not relabel those games or navigate away from its date.
+        games = result.value.filter {
+            Calendar.current.isDate($0.startDate, inSameDayAs: requestedDate)
+        }
         dataOrigin = result.origin
         warningMessage = result.warningMessage
-
-        // Only redirect the date on initial league load, not when the user is browsing dates.
-        if !userIsNavigating, let adjustedDate = result.adjustedDate {
-            selectedDate = adjustedDate
-        }
 
         loadState = .loaded
 

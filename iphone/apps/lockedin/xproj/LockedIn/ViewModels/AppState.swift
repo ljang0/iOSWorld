@@ -71,6 +71,7 @@ final class AppState: ObservableObject {
     func toggleLike(postId: String) {
         guard let index = posts.firstIndex(where: { $0.id == postId }) else { return }
         posts[index].userHasLiked.toggle()
+        posts[index].userReaction = posts[index].userHasLiked ? .like : nil
         if posts[index].userHasLiked {
             posts[index].reactionCount += 1
         } else {
@@ -85,6 +86,7 @@ final class AppState: ObservableObject {
             posts[index].userHasLiked = true
             posts[index].reactionCount += 1
         }
+        posts[index].userReaction = reaction
         // Move this reaction to the front of topReactions
         var reactions = posts[index].topReactions
         reactions.removeAll { $0 == reaction }
@@ -415,9 +417,15 @@ final class AppState: ObservableObject {
                 jobs[i].isSaved = savedJobIds.contains(jobs[i].id)
             }
         }
+        let userReactions = persistence.loadUserReactions()
         if let likedPostIds = persistence.loadLikedPostIds() {
             for i in posts.indices {
-                posts[i].userHasLiked = likedPostIds.contains(posts[i].id)
+                let liked = likedPostIds.contains(posts[i].id)
+                if liked != posts[i].userHasLiked {
+                    posts[i].reactionCount = max(0, posts[i].reactionCount + (liked ? 1 : -1))
+                }
+                posts[i].userHasLiked = liked
+                posts[i].userReaction = liked ? userReactions[posts[i].id] : nil
             }
         }
         if let dismissedInvIds = persistence.loadDismissedInvitationIds() {
@@ -431,6 +439,9 @@ final class AppState: ObservableObject {
 
         let likedPostIds = Set(posts.filter { $0.userHasLiked }.map { $0.id })
         persistence.persistLikedPostIds(likedPostIds)
+        persistence.persistUserReactions(Dictionary(uniqueKeysWithValues: posts.compactMap { post in
+            post.selectedReaction.map { (post.id, $0) }
+        }))
     }
 
     func resetState() {

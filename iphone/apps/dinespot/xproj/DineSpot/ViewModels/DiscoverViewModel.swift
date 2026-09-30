@@ -41,7 +41,8 @@ final class DiscoverViewModel: ObservableObject {
         if !daySlots.isEmpty {
             return Array(daySlots.prefix(limit))
         }
-        return store.nextAvailableSlots(for: restaurantID, partySize: partySize, limit: limit)
+        // Quick-slot chips show only a time, so they must stay on the selected day.
+        return []
     }
 
     func filteredRestaurants(store: DiningStore) -> [Restaurant] {
